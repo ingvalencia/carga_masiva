@@ -5,10 +5,12 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use PDO;
+use Illuminate\Support\Facades\Log;
 
 class ExcelController extends Controller
 {
-    public function upload(Request $request) {
+    public function upload(Request $request)
+    {
 
         try {
             DB::connection()->getPdo();
@@ -20,13 +22,14 @@ class ExcelController extends Controller
         }
 
         try {
+
             $request->validate([
                 'file' => [
                     'required',
                     'file',
                     function ($attribute, $value, $fail) {
-                        $extension = $value->getClientOriginalExtension();
-                        if (!in_array(strtolower($extension), ['xlsx', 'csv'])) {
+                        $extension = strtolower($value->getClientOriginalExtension());
+                        if (!in_array($extension, ['xlsx', 'csv'])) {
                             $fail('El archivo debe ser de tipo: xlsx, csv.');
                         }
                     },
@@ -43,28 +46,45 @@ class ExcelController extends Controller
                 $filePath = $csvPath;
             }
 
-            $affectedRows = DB::connection()->getPdo()->exec(
-                "LOAD DATA LOCAL INFILE '".str_replace('\\', '/', addslashes($filePath))."'
-                 INTO TABLE temp_excel_data
-                 FIELDS TERMINATED BY ','
-                 ENCLOSED BY '\"'
-                 LINES TERMINATED BY '\n'
-                 IGNORE 1 ROWS
-                 (nombre, paterno, materno, telefono, calle, numero_exterior, numero_interior, colonia, cp)"
-            );
+
+            $query = "LOAD DATA LOCAL INFILE '".str_replace('\\', '/', addslashes($filePath))."'
+                     INTO TABLE temp_excel_data
+                     FIELDS TERMINATED BY ','
+                     ENCLOSED BY '\"'
+                     LINES TERMINATED BY '\n'
+                     IGNORE 1 ROWS
+                     (nombre, paterno, materno, telefono, calle, numero_exterior, numero_interior, colonia, cp)";
+
+            $affectedRows = DB::connection()->getPdo()->exec($query);
+
+
+            DB::unprepared('CALL migrar_datos()');
 
             return response()->json([
                 'success' => true,
                 'message' => 'Archivo procesado exitosamente',
-                'rows_affected' => $affectedRows
+                'stats' => [
+                    'filas_temporales' => $affectedRows,
+                    'personas' => DB::table('personas')->count(),
+                    'telefonos' => DB::table('telefonos')->count(),
+                    'direcciones' => DB::table('direcciones')->count()
+                ]
             ]);
 
         } catch (\Exception $e) {
-            \Log::error('Error al procesar archivo: '.$e->getMessage());
+            Log::error('Error en upload: '.$e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Error al procesar el archivo: '.$e->getMessage()
             ], 500);
         }
+    }
+
+    private function convertExcelToCsv($excelPath)
+    {
+
+        $csvPath = str_replace('.xlsx', '.csv', $excelPath);
+        
+        return $csvPath;
     }
 }
