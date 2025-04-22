@@ -26,21 +26,21 @@ function ExcelUploader() {
         method: 'POST',
         body: formData,
         headers: {
-            'Accept': 'application/json', 
+            'Accept': 'application/json',
         },
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        setUploadStatus('✓ Archivo subido correctamente');
+        setUploadStatus('Archivo subido correctamente');
         console.log('Respuesta del servidor:', data);
       } else {
         setUploadStatus('Error al subir el archivo');
         console.error('Error del servidor:', data);
       }
     } catch (error) {
-      setUploadStatus('✗ Error de conexión');
+      setUploadStatus('Error de conexión');
       console.error('Error de red:', error);
     }
   };
