@@ -1,8 +1,9 @@
 import React, { useCallback, useState } from 'react';
-import { useDropzone } from 'react-dropzone'; 
+import { useDropzone } from 'react-dropzone';
 
 function ExcelUploader() {
   const [file, setFile] = useState(null);
+  const [uploadStatus, setUploadStatus] = useState('');
 
   const onDrop = useCallback((acceptedFiles) => {
     const selectedFile = acceptedFiles[0];
@@ -11,8 +12,38 @@ function ExcelUploader() {
       return;
     }
     setFile(selectedFile);
-    console.log('Archivo válido:', selectedFile.name);
+    uploadFile(selectedFile);
   }, []);
+
+  const uploadFile = async (fileToUpload) => {
+    const formData = new FormData();
+    formData.append('file', fileToUpload);
+
+    setUploadStatus('Enviando archivo...');
+
+    try {
+      const response = await fetch('http://localhost:8000/api/upload-excel', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'Accept': 'application/json', 
+        },
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setUploadStatus('✓ Archivo subido correctamente');
+        console.log('Respuesta del servidor:', data);
+      } else {
+        setUploadStatus('Error al subir el archivo');
+        console.error('Error del servidor:', data);
+      }
+    } catch (error) {
+      setUploadStatus('✗ Error de conexión');
+      console.error('Error de red:', error);
+    }
+  };
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -33,7 +64,8 @@ function ExcelUploader() {
              borderRadius: '4px',
              padding: '20px',
              textAlign: 'center',
-             cursor: 'pointer'
+             cursor: 'pointer',
+             marginBottom: '20px'
            }}>
         <input {...getInputProps()} />
         {
@@ -41,8 +73,14 @@ function ExcelUploader() {
             <p>Suelta el archivo Excel aquí...</p> :
             <p>Arrastra y suelta tu archivo Excel aquí, o haz clic para seleccionarlo</p>
         }
-        {file && <p>Archivo seleccionado: {file.name}</p>}
       </div>
+
+      {file && (
+        <div>
+          <p>Archivo seleccionado: {file.name}</p>
+          <p>Estado: {uploadStatus}</p>
+        </div>
+      )}
     </div>
   );
 }
