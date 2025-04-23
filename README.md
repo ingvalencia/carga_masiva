@@ -40,7 +40,7 @@ A continuación se muestra una captura de la interfaz de carga de Excel y visual
 ![Carga Excel y Tabla de Personas](images/img.png)
 
 
-![Carga Excel y Tabla de Personas](images/img1.png)
+![Carga Excel y Tabla de Personas](images/img2.png)
 
 
 
