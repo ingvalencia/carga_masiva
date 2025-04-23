@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ExcelController;
+use App\Http\Controllers\AuthController;
 
 /*
 |--------------------------------------------------------------------------
@@ -21,21 +22,13 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 Route::post('/upload-excel', [ExcelController::class, 'upload']);
 
-Route::post('/login', function (Request $request) {
-    $credentials = $request->validate([
-        'email' => 'required|email',
-        'password' => 'required'
-    ]);
 
-    if (Auth::attempt($credentials)) {
-        return response()->json([
-            'token' => Auth::user()->createToken('API_TOKEN')->plainTextToken
-        ]);
-    }
+Route::post('/login', [AuthController::class, 'login']);
 
-    return response()->json(['error' => 'Credenciales inválidas'], 401);
-})->name('login');
-
+Route::post('/logout', function (Request $request) {
+    $request->user()->currentAccessToken()->delete();
+    return response()->json(['message' => 'Sesión cerrada']);
+})->middleware('auth:sanctum');
 
 Route::get('/ruta-solo-admin', function () {
     return response()->json(['message' => 'Solo admin puede ver esto']);

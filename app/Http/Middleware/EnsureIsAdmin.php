@@ -15,9 +15,9 @@ class EnsureIsAdmin
      */
     public function handle($request, Closure $next)
     {
-        if (auth()->user() && auth()->user()->is_admin) {
-            return $next($request);
+        if (!auth()->user() || !auth()->user()->is_admin) {
+            abort(403, 'Acceso no autorizado');
         }
-        return response()->json(['error' => 'Acceso no autorizado'], 403);
+        return $next($request);
     }
 }
